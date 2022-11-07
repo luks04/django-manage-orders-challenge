@@ -9,6 +9,9 @@ from rest_framework.response import Response
 from core.models import Driver, Order
 from .serializers import DriverSerializer, OrderSerializer
 from .utils import get_error_dict
+from .utils import get_closest_driver_by_orders_and_coordinates
+from .utils import get_closest_driver_by_driver_starting_zone
+
 
 ########## MODEL VIEW SETS ##########
 
@@ -110,3 +113,48 @@ def filter_orders(request: Request, *args, **kwargs) -> Response:
             queryset = Order.objects.filter(pickup_datetime__date = filter_date).order_by('-pickup_datetime')
         serlalized_obj = OrderSerializer(queryset, many = True).data
     return Response(serlalized_obj, status = status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes((permissions.AllowAny,))
+def get_closest_driver(request: Request) -> Response:
+    """Search for the driver that is closest to a geographical point on a date and time. 
+    Considering the orders already assigned to the driver
+
+    Args:
+    -----
+        request (Request): The API request object.
+
+    Returns:
+    -------
+        Response: The nearest (about distance and time) found driver.
+    """
+    target_datetime_str = request.data.get('target_datetime')
+    lat_str = request.data.get('lat')
+    lng_str = request.data.get('lng')
+    try:
+        if target_datetime_str is None or lat_str is None or lng_str is None:
+            needed_fields = ['target_datetime', 'lat', 'lng']
+            raise  Exception(f"Missing parameters. Fields {needed_fields} needed.")
+        # Every exception parsing the target_datetime or the lat and lng will be catched. 
+        target_datetime = datetime.datetime.strptime(target_datetime_str, settings.DEFAULT_DATETIME_FORMAT)
+        lat = int(lat_str)
+        lng = int(lng_str)
+        # If the order's pickup_datetime is lower than current datetime, raise an exception. 
+        if target_datetime < datetime.datetime.now():
+            raise Exception("It is not possible to schedule an order for a past time.")
+    except Exception as error:
+        error_dict = get_error_dict(str(error))
+        return Response(error_dict, status = status.HTTP_400_BAD_REQUEST)
+    else:
+        # Search nearby drivers by orders coordinates and datetime.
+        selected_driver_id = get_closest_driver_by_orders_and_coordinates(target_datetime, lat, lng)
+        # If no nearby drivers are found by orders, search for a driver by initial zone coordinates.
+        if selected_driver_id is None:
+            selected_driver_id = get_closest_driver_by_driver_starting_zone(lat, lng)
+            if selected_driver_id is None:
+                error_dict = get_error_dict("Active drivers not found.")
+                return Response(error_dict, status = status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    selected_driver = Driver.objects.get(pk = selected_driver_id)
+    response = DriverSerializer(selected_driver).data
+    return Response(response, status = status.HTTP_200_OK)

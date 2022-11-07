@@ -13,4 +13,5 @@ urlpatterns = [
     path('filter_orders/', filter_orders),
     path('filter_orders/<str:date>/', filter_orders),
     path('filter_orders/<str:date>/<int:driver_id>/', filter_orders),
+    path('get_closest_driver/', get_closest_driver)
 ]
