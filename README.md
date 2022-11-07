@@ -12,7 +12,7 @@ docker build -t backend/manage-orders-challenge:latest .
 docker run --name manage-orders-challenge -dp 8080:8080 backend/manage-orders-challenge:latest
 ```
 
-Go to localhost:8080 in yout browser
+Go to <http://localhost:8080> in your browser
 
 # Run server
 
@@ -25,4 +25,4 @@ cd app
 python manage.py runserver 8080
 ```
 
-Go to localhost:8080 in yout browser
+Go to <http://localhost:8080> in your browser
