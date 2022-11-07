@@ -9,10 +9,6 @@ from rest_framework.response import Response
 from core.models import Driver, Order
 from .serializers import DriverSerializer, OrderSerializer
 from .utils import get_error_dict
-from .utils import get_closest_driver_by_orders_and_coordinates
-from .utils import get_closest_driver_by_driver_starting_zone
-from core.cron import fetch_drivers_location
-
 
 ########## MODEL VIEW SETS ##########
 
@@ -71,3 +67,46 @@ def schedule_order(request: Request) -> Response:
         order_serializer.save()
         return Response(order_serializer.data, status = status.HTTP_201_CREATED)
     return Response(order_serializer.errors, status = status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes((permissions.AllowAny,))
+def filter_orders(request: Request, *args, **kwargs) -> Response:
+    """Consult all the orders assigned on a specific day ordered by time.
+    Consult all the orders of a driver on a specific day ordered by time.
+
+    Args:
+    -----
+        request (Request): The API request object.
+    
+    Raises:
+    -------
+        Exception: When the date filter is missing
+            or when the received date does not match with a valid format.
+
+    Returns:
+    --------
+        Response: The filtered orders.
+    """
+    date_str = kwargs.get("date")
+    driver_id_int = kwargs.get("driver_id")
+    try:
+        if date_str is None:
+            needed_fields = ['date']
+            raise  Exception(f"Missing parameters. Fields {needed_fields} needed.")
+        filter_date = datetime.datetime.strptime(date_str, settings.DEFAULT_DATE_FORMAT).date()
+    except Exception as error:
+        error_dict = get_error_dict(str(error))
+        return Response(error_dict, status = status.HTTP_400_BAD_REQUEST)
+    else:
+        if driver_id_int is not None:
+            # Filter by pickup_datetime and driver id.
+            # Order By: Most recent first (desc).
+            queryset = Order.objects.filter(pickup_datetime__date = filter_date, 
+                                        driver_id = driver_id_int
+                                        ).order_by('-pickup_datetime')
+        else:
+            # Filter by pickup_datetime.
+            # Order By: Most recent first (desc).
+            queryset = Order.objects.filter(pickup_datetime__date = filter_date).order_by('-pickup_datetime')
+        serlalized_obj = OrderSerializer(queryset, many = True).data
+    return Response(serlalized_obj, status = status.HTTP_200_OK)
