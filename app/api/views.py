@@ -141,7 +141,7 @@ def get_closest_driver(request: Request) -> Response:
         lng = int(lng_str)
         # If the order's pickup_datetime is lower than current datetime, raise an exception. 
         if target_datetime < datetime.datetime.now():
-            raise Exception("It is not possible to schedule an order for a past time.")
+            raise Exception("It is not possible to search a closest driver an order for a past time.")
     except Exception as error:
         error_dict = get_error_dict(str(error))
         return Response(error_dict, status = status.HTTP_400_BAD_REQUEST)
