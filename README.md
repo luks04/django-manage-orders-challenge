@@ -22,6 +22,10 @@ conda activate dj_env
 conda install pip
 pip install -r requirements.txt
 cd app
+python manage.py makemigrations core
+python manage.py migrate core
+python manage.py makemigrations
+python manage.py migrate
 python manage.py runserver 8080
 ```
 
