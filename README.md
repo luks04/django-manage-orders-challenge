@@ -12,7 +12,8 @@ docker build -t backend/manage-orders-challenge:latest .
 docker run --name manage-orders-challenge -dp 8080:8080 backend/manage-orders-challenge:latest
 ```
 
-Start testing backend endpoints at <http://localhost:8080/api>
+Start testing backend endpoints at <http://localhost:8080/api>. You can use the following Postman collection:
+<https://www.getpostman.com/collections/5b1dc2563b68bb43237c>
 
 # Run server
 
@@ -52,7 +53,8 @@ python manage.py migrate
 python manage.py runserver 8080
 ```
 
-Start testing backend endpoints at <http://localhost:8080/api>
+Start testing backend endpoints at <http://localhost:8080/api>. You can use the following Postman collection:
+<https://www.getpostman.com/collections/5b1dc2563b68bb43237c>
 
 # Notes
 
