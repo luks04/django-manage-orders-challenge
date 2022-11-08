@@ -43,26 +43,37 @@ def get_closest_driver_by_orders_and_coordinates(target_datetime: datetime.datet
             selected_driver_id = order.driver.id
     return selected_driver_id
 
-def get_closest_driver_by_driver_starting_zone(lat: int, lng: int) -> Union[int, None]:
-    """Search for a driver by initial zone coordinates
+def get_closest_driver_by_driver_starting_zone(lat: int, lng: int, target_datetime: datetime.datetime) -> Union[int, None]:
+    """Search for a driver by initial zone coordinates using target_datetime to exclude busy drivers.
 
     Args:
     -----
         lat (int): Latitude coordinates.
         lng (int): Longitude coordinates.
+        target_datetime (datetime.datetime): The requested Order target datetime.
 
     Returns:
     --------
         Union[int, None]: The id of the found closest driver. None if no close driver is found.
     """
+    # Gets the active orders at requested datetime.
+    last_active_order_start_datetime = target_datetime - settings.DEFAULT_ORDER_DURATION
+    last_active_order_end_datetime = target_datetime - datetime.timedelta(minutes = 1)
+    qs_active_orders_to_date = Order.objects.filter(
+        pickup_datetime__gte = last_active_order_start_datetime,
+        pickup_datetime__lte = last_active_order_end_datetime
+    )
+    # Gets the busy drivers at requested datetime.
+    busy_drivers = [order.driver.id for order in qs_active_orders_to_date]
     all_drivers = Driver.objects.all()
     # Define a positive infinity value to the shortest distance and initialize the selected_driver_id.
     closest_distance = float('inf')
     selected_driver_id = None
     # Iterate over the drivers and find the nearest (in distance).
     for driver in all_drivers:
-        driver_distance = abs(driver.lat - lat) + abs(driver.lng - lng)
-        if driver_distance < closest_distance:
-            closest_distance = driver_distance
-            selected_driver_id = driver.id
+        if driver.id not in busy_drivers:
+            driver_distance = abs(driver.lat - lat) + abs(driver.lng - lng)
+            if driver_distance < closest_distance:
+                closest_distance = driver_distance
+                selected_driver_id = driver.id
     return selected_driver_id

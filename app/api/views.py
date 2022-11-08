@@ -150,7 +150,7 @@ def get_closest_driver(request: Request) -> Response:
         selected_driver_id = get_closest_driver_by_orders_and_coordinates(target_datetime, lat, lng)
         # If no nearby drivers are found by orders, search for a driver by initial zone coordinates.
         if selected_driver_id is None:
-            selected_driver_id = get_closest_driver_by_driver_starting_zone(lat, lng)
+            selected_driver_id = get_closest_driver_by_driver_starting_zone(lat, lng, target_datetime)
             if selected_driver_id is None:
                 error_dict = get_error_dict("Active drivers not found.")
                 return Response(error_dict, status = status.HTTP_500_INTERNAL_SERVER_ERROR)

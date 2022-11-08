@@ -14,6 +14,9 @@ COPY ./requirements.txt /usr/src/app
 # Install python requirements
 RUN pip install -r requirements.txt
 
+# Run Unit Tests
+RUN python manage.py test
+
 # Django-crontab logfile
 RUN mkdir /cron
 RUN touch /cron/django_cron.log
