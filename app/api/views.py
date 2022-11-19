@@ -56,14 +56,14 @@ def schedule_order(request: Request) -> Response:
         # Obtains the orders of the driver that, for the requested moment, intersect with other orders.
         lower_datetime_limit = new_order_pickup_datetime - settings.DEFAULT_ORDER_DURATION
         upper_datetime_limit = new_order_pickup_datetime + settings.DEFAULT_ORDER_DURATION
-        qs_cross_orders = Order.objects.filter(
+        qs_cross_orders_count = Order.objects.filter(
             driver_id = request.data["driver"],
             pickup_datetime__lte = upper_datetime_limit,
             pickup_datetime__gte = lower_datetime_limit
-        )
+        ).count()
         # If it finds that there are more orders that intersect with the orders previously 
         # scheduled for the requested driver, it raise an error.
-        if len(qs_cross_orders) > 0:
+        if qs_cross_orders_count > 0:
             error_dict = get_error_dict("The driver is busy at the requested time. Please try another time.")
             return Response(error_dict, status = status.HTTP_500_INTERNAL_SERVER_ERROR)
         # Otherwise save it.
